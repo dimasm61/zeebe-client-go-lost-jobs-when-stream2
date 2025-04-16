@@ -58,7 +58,11 @@ func (poller *jobPoller) poll(closeWait *sync.WaitGroup) {
 		select {
 		// either a job was finished
 		case <-poller.workerFinished:
+			//if poller.remaining > 0 {
 			poller.remaining--
+			//}
+			log.Printf("poller.remaining--  remaining=%d\n", poller.remaining)
+
 			poller.setJobsRemainingCountMetric(poller.remaining)
 			poller.pollInterval = poller.initialPollInterval
 		// or the poll interval exceeded
@@ -76,8 +80,12 @@ func (poller *jobPoller) poll(closeWait *sync.WaitGroup) {
 }
 
 func (poller *jobPoller) shouldActivateJobs() bool {
+	log.Printf("check poller. remaining <= poller.threshold.  %d <= %d = %t\n",
+		poller.remaining, poller.threshold, poller.remaining <= poller.threshold)
 	return poller.remaining <= poller.threshold
 }
+
+var polledJobCounter int64 = 0
 
 func (poller *jobPoller) activateJobs() {
 	ctx, cancel := context.WithTimeout(context.Background(), poller.requestTimeout)
@@ -123,6 +131,8 @@ func (poller *jobPoller) activateJobs() {
 		poller.remaining += len(response.Jobs)
 		poller.setJobsRemainingCountMetric(poller.remaining)
 		for _, job := range response.Jobs {
+			polledJobCounter++
+			log.Printf("New job polled: %d, (%d)\n", job.Key, polledJobCounter)
 			poller.jobQueue <- entities.Job{ActivatedJob: job}
 		}
 	}

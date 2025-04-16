@@ -15,6 +15,7 @@
 package worker
 
 import (
+	"log"
 	"sync"
 
 	"github.com/camunda-community-hub/zeebe-client-go/v8/pkg/entities"
@@ -49,6 +50,7 @@ func (dispatcher *jobDispatcher) run(client JobClient, handler JobHandler, concu
 		workerLoop:
 			for {
 				workerQueue <- work
+				log.Printf("len(workerQueue)=%d\n", len(workerQueue))
 				select {
 				case job := <-work:
 					handler(client, job)

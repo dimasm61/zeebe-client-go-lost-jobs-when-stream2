@@ -90,6 +90,8 @@ func (cmd *StreamJobsCommand) RequestTimeout(requestTimeout time.Duration) Dispa
 	return cmd
 }
 
+var streamedJobsCounter int64 = 0
+
 func (cmd *StreamJobsCommand) Send(ctx context.Context) error {
 	if cmd.requestTimeout > 0 {
 		streamContext, cancelCtx := context.WithTimeout(ctx, cmd.requestTimeout)
@@ -120,6 +122,8 @@ func (cmd *StreamJobsCommand) Send(ctx context.Context) error {
 			}
 		}
 
+		streamedJobsCounter++
+		log.Printf("New job streamed: %d (%d) consume len:(%d)\n", job.Key, streamedJobsCounter, len(cmd.consumer))
 		cmd.consumer <- entities.Job{ActivatedJob: job}
 	}
 
